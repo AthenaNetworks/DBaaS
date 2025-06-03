@@ -37,6 +37,23 @@ This directory contains a complete working example of a customer management syst
    - Customer Service: cs@example.com / service123
    - Sales Rep: sales@example.com / sales123
 
+## Cleaning Up
+
+After you're done experimenting with the example, you can reset your database to its original state:
+
+```
+cd /var/www/html/example
+chmod +x cleanup.sh
+./cleanup.sh
+```
+
+The cleanup script will:
+1. Remove the example users (admin@example.com, cs@example.com, sales@example.com)
+2. Remove all permissions associated with these users
+3. Drop the customers and orders tables
+
+This allows you to start fresh or run the setup script again if needed.
+
 ## Permission Demonstration
 
 This example demonstrates DBaaS's granular permission system:
