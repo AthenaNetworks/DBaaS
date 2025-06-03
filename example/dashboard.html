@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBaaS Customer Management Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .status-badge {
+            text-transform: capitalize;
+        }
+        .hidden-amount {
+            color: #ccc;
+        }
+        #login-error {
+            display: none;
+        }
+        .user-info {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .permission-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>DBaaS Customer Management Dashboard</h1>
+        <p class="lead">This is a demonstration of the DBaaS API capabilities with granular permissions.</p>
+        
+        <!-- Login Form -->
+        <div id="login-section" class="card mb-4">
+            <div class="card-header">Login</div>
+            <div class="card-body">
+                <div id="login-error" class="alert alert-danger" role="alert">
+                    Invalid email or password. Please try again.
+                </div>
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <div class="mt-3">
+                    <p><strong>Available test accounts:</strong></p>
+                    <ul>
+                        <li><strong>Admin:</strong> admin@example.com / secure123</li>
+                        <li><strong>Customer Service:</strong> cs@example.com / service123</li>
+                        <li><strong>Sales Rep:</strong> sales@example.com / sales123</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard (initially hidden) -->
+        <div id="dashboard" style="display: none;">
+            <div class="user-info card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0" id="user-name"></h5>
+                            <p class="mb-0" id="user-email"></p>
+                            <span class="badge bg-primary" id="user-role"></span>
+                        </div>
+                        <button id="logout-btn" class="btn btn-outline-secondary btn-sm">Logout</button>
+                    </div>
+                    <div class="permission-info" id="permission-info">
+                        <h6>Your Permissions:</h6>
+                        <div id="permission-details"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Customer Management -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Customers</span>
+                            <button id="add-customer-btn" class="btn btn-sm btn-primary">Add Customer</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <input type="text" id="customer-search" class="form-control" placeholder="Search customers...">
+                            </div>
+                            <div id="customers-container">
+                                <!-- Customer data will be loaded here -->
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Management -->
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Orders</span>
+                            <button id="add-order-btn" class="btn btn-sm btn-primary">New Order</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <select id="customer-filter" class="form-select">
+                                    <option value="">All Customers</option>
+                                    <!-- Customer options will be loaded here -->
+                                </select>
+                            </div>
+                            <div id="orders-container">
+                                <!-- Order data will be loaded here -->
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Customer Modal -->
+        <div class="modal fade" id="add-customer-modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Customer</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-customer-form">
+                            <div class="mb-3">
+                                <label for="customer-name" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="customer-name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="customer-email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="customer-email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="customer-phone" class="form-label">Phone</label>
+                                <input type="text" class="form-control" id="customer-phone">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="save-customer-btn" class="btn btn-primary">Save Customer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Order Modal -->
+        <div class="modal fade" id="add-order-modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Create New Order</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-order-form">
+                            <div class="mb-3">
+                                <label for="order-customer" class="form-label">Customer</label>
+                                <select class="form-select" id="order-customer" required>
+                                    <!-- Customer options will be loaded here -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="order-amount" class="form-label">Amount</label>
+                                <input type="number" step="0.01" min="0" class="form-control" id="order-amount" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="order-status" class="form-label">Status</label>
+                                <select class="form-select" id="order-status">
+                                    <option value="new">New</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="shipped">Shipped</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="save-order-btn" class="btn btn-primary">Create Order</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Update Order Status Modal -->
+        <div class="modal fade" id="update-status-modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Order Status</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="update-status-form">
+                            <input type="hidden" id="update-order-id">
+                            <div class="mb-3">
+                                <label for="update-status" class="form-label">Status</label>
+                                <select class="form-select" id="update-status">
+                                    <option value="new">New</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="shipped">Shipped</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="save-status-btn" class="btn btn-primary">Update Status</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentUser = null;
+        let userPermissions = [];
+        const API_BASE_URL = 'http://localhost:8000/api';
+        
+        // DBaaS API helper function
+        function dbaasRequest(endpoint, method, data, callback) {
+            const apiKey = localStorage.getItem('dbaas_api_key');
+            
+            if (!apiKey && endpoint !== 'auth/login') {
+                console.error('No API key found. Please login first.');
+                $('#login-section').show();
+                $('#dashboard').hide();
+                return;
+            }
+            
+            $.ajax({
+                url: API_BASE_URL + '/' + endpoint,
+                type: method,
+                contentType: 'application/json',
+                headers: endpoint !== 'auth/login' ? {
+                    'Authorization': 'Bearer ' + apiKey
+                } : {},
+                data: data ? JSON.stringify(data) : null,
+                success: function(response) {
+                    callback(null, response);
+                },
+                error: function(xhr) {
+                    if (xhr.status === 401 && endpoint !== 'auth/login') {
+                        // Unauthorized, clear token and show login
+                        localStorage.removeItem('dbaas_api_key');
+                        $('#login-section').show();
+                        $('#dashboard').hide();
+                    }
+                    callback(xhr.responseJSON || xhr.responseText, null);
+                }
+            });
+        }
+        
+        // Check if user is already logged in
+        $(document).ready(function() {
+            const apiKey = localStorage.getItem('dbaas_api_key');
+            
+            if (apiKey) {
+                // Verify the API key is still valid
+                dbaasRequest('auth/user', 'GET', null, function(err, data) {
+                    if (!err && data) {
+                        // API key is valid, show dashboard
+                        currentUser = data;
+                        $('#login-section').hide();
+                        $('#dashboard').show();
+                        updateUserInfo();
+                        loadPermissions();
+                        loadCustomers();
+                        loadOrders();
+                    }
+                });
+            }
+            
+            // Login form submission
+            $('#login-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                dbaasRequest('auth/login', 'POST', {
+                    email: $('#email').val(),
+                    password: $('#password').val()
+                }, function(err, response) {
+                    if (err) {
+                        $('#login-error').show();
+                        return;
+                    }
+                    
+                    localStorage.setItem('dbaas_api_key', response.api_key);
+                    
+                    // Get user info
+                    dbaasRequest('auth/user', 'GET', null, function(err, data) {
+                        if (!err && data) {
+                            currentUser = data;
+                            $('#login-section').hide();
+                            $('#dashboard').show();
+                            updateUserInfo();
+                            loadPermissions();
+                            loadCustomers();
+                            loadOrders();
+                        }
+                    });
+                });
+            });
+            
+            // Logout button
+            $('#logout-btn').on('click', function() {
+                localStorage.removeItem('dbaas_api_key');
+                currentUser = null;
+                $('#login-section').show();
+                $('#dashboard').hide();
+                $('#login-error').hide();
+                $('#email').val('');
+                $('#password').val('');
+            });
+            
+            // Update user info in the dashboard
+            function updateUserInfo() {
+                if (!currentUser) return;
+                
+                $('#user-name').text(currentUser.name);
+                $('#user-email').text(currentUser.email);
+                $('#user-role').text(currentUser.role);
+                
+                // Disable add buttons for users without permissions
+                if (currentUser.role !== 'admin') {
+                    // These will be enabled/disabled based on permissions later
+                    $('#add-customer-btn').prop('disabled', true);
+                    $('#add-order-btn').prop('disabled', true);
+                }
+            }
+            
+            // Load user permissions
+            function loadPermissions() {
+                if (!currentUser) return;
+                
+                if (currentUser.role === 'admin') {
+                    $('#permission-details').html('<p>As an admin, you have full access to all features.</p>');
+                    return;
+                }
+                
+                dbaasRequest('db', 'POST', {
+                    method: 'select',
+                    table: 'permissions',
+                    where: [['user_id', '=', currentUser.id]]
+                }, function(err, data) {
+                    if (err) {
+                        console.error('Error loading permissions:', err);
+                        return;
+                    }
+                    
+                    userPermissions = data.data || [];
+                    
+                    if (userPermissions.length === 0) {
+                        $('#permission-details').html('<p>You have no specific permissions assigned.</p>');
+                        return;
+                    }
+                    
+                    let permissionHtml = '<ul class="list-unstyled mb-0">';
+                    
+                    userPermissions.forEach(function(perm) {
+                        let operations = [];
+                        if (perm.can_select) operations.push('SELECT');
+                        if (perm.can_insert) operations.push('INSERT');
+                        if (perm.can_update) operations.push('UPDATE');
+                        if (perm.can_delete) operations.push('DELETE');
+                        
+                        permissionHtml += `<li><strong>${perm.table_name}:</strong> ${operations.join(', ')}`;
+                        
+                        if (perm.columns_allowed) {
+                            permissionHtml += `<br><small>Allowed columns: ${perm.columns_allowed}</small>`;
+                        }
+                        
+                        if (perm.columns_denied) {
+                            permissionHtml += `<br><small>Denied columns: ${perm.columns_denied}</small>`;
+                        }
+                        
+                        if (perm.where_conditions) {
+                            permissionHtml += `<br><small>With conditions: ${perm.where_conditions}</small>`;
+                        }
+                        
+                        permissionHtml += '</li>';
+                        
+                        // Enable/disable buttons based on permissions
+                        if (perm.table_name === 'customers') {
+                            if (perm.can_insert) {
+                                $('#add-customer-btn').prop('disabled', false);
+                            }
+                        }
+                        
+                        if (perm.table_name === 'orders') {
+                            if (perm.can_insert) {
+                                $('#add-order-btn').prop('disabled', false);
+                            }
+                        }
+                    });
+                    
+                    permissionHtml += '</ul>';
+                    $('#permission-details').html(permissionHtml);
+                });
+            }
+            
+            // Load customers
+            function loadCustomers() {
+                dbaasRequest('db/customers', 'GET', null, function(err, data) {
+                    if (err) {
+                        console.error('Error loading customers:', err);
+                        $('#customers-container').html('<div class="alert alert-danger">Error loading customers: ' + JSON.stringify(err) + '</div>');
+                        return;
+                    }
+                    
+                    if (!data.data || data.data.length === 0) {
+                        $('#customers-container').html('<p>No customers found.</p>');
+                        return;
+                    }
+                    
+                    // Populate customer table
+                    let html = '<table class="table table-hover"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th></tr></thead><tbody>';
+                    
+                    data.data.forEach(function(customer) {
+                        html += `<tr data-id="${customer.id}" class="customer-row">
+                            <td>${customer.id}</td>
+                            <td>${customer.name}</td>
+                            <td>${customer.email}</td>
+                            <td>${customer.phone || 'N/A'}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    $('#customers-container').html(html);
+                    
+                    // Populate customer dropdowns
+                    let options = '<option value="">Select Customer</option>';
+                    let filterOptions = '<option value="">All Customers</option>';
+                    
+                    data.data.forEach(function(customer) {
+                        options += `<option value="${customer.id}">${customer.name}</option>`;
+                        filterOptions += `<option value="${customer.id}">${customer.name}</option>`;
+                    });
+                    
+                    $('#order-customer').html(options);
+                    $('#customer-filter').html(filterOptions);
+                    
+                    // Add click handler for customer rows
+                    $('.customer-row').on('click', function() {
+                        const customerId = $(this).data('id');
+                        $('#customer-filter').val(customerId).trigger('change');
+                    });
+                });
+            }
+            
+            // Load orders
+            function loadOrders(customerId = null) {
+                let requestData = { method: 'select' };
+                
+                if (customerId) {
+                    requestData.where = [['customer_id', '=', customerId]];
+                }
+                
+                dbaasRequest('db/orders', 'POST', requestData, function(err, data) {
+                    if (err) {
+                        console.error('Error loading orders:', err);
+                        $('#orders-container').html('<div class="alert alert-danger">Error loading orders: ' + JSON.stringify(err) + '</div>');
+                        return;
+                    }
+                    
+                    if (!data.data || data.data.length === 0) {
+                        $('#orders-container').html('<p>No orders found.</p>');
+                        return;
+                    }
+                    
+                    // Check if we have permission to see amounts
+                    const canSeeAmount = currentUser.role === 'admin' || !userPermissions.some(p => 
+                        p.table_name === 'orders' && 
+                        p.columns_denied && 
+                        p.columns_denied.includes('amount')
+                    );
+                    
+                    // Check if we can update order status
+                    const canUpdateStatus = currentUser.role === 'admin' || userPermissions.some(p => 
+                        p.table_name === 'orders' && 
+                        p.can_update && 
+                        (!p.columns_allowed || p.columns_allowed.includes('status'))
+                    );
+                    
+                    // Populate orders table
+                    let html = '<table class="table table-hover"><thead><tr><th>ID</th><th>Customer</th>';
+                    
+                    if (canSeeAmount) {
+                        html += '<th>Amount</th>';
+                    }
+                    
+                    html += '<th>Status</th><th>Date</th>';
+                    
+                    if (canUpdateStatus) {
+                        html += '<th>Actions</th>';
+                    }
+                    
+                    html += '</tr></thead><tbody>';
+                    
+                    // We need to get customer names
+                    dbaasRequest('db/customers', 'GET', null, function(err, customerData) {
+                        if (err) {
+                            console.error('Error loading customer data for orders:', err);
+                            return;
+                        }
+                        
+                        // Create a map of customer IDs to names
+                        const customerMap = {};
+                        if (customerData.data) {
+                            customerData.data.forEach(function(customer) {
+                                customerMap[customer.id] = customer.name;
+                            });
+                        }
+                        
+                        data.data.forEach(function(order) {
+                            const customerName = customerMap[order.customer_id] || 'Unknown';
+                            const orderDate = new Date(order.order_date).toLocaleDateString();
+                            
+                            html += `<tr>
+                                <td>${order.id}</td>
+                                <td>${customerName}</td>`;
+                                
+                            if (canSeeAmount) {
+                                html += `<td>$${parseFloat(order.amount).toFixed(2)}</td>`;
+                            }
+                            
+                            html += `<td><span class="badge bg-${getStatusColor(order.status)} status-badge">${order.status}</span></td>
+                                <td>${orderDate}</td>`;
+                                
+                            if (canUpdateStatus) {
+                                html += `<td>
+                                    <button class="btn btn-sm btn-outline-primary update-status-btn" data-id="${order.id}" data-status="${order.status}">
+                                        Update Status
+                                    </button>
+                                </td>`;
+                            }
+                            
+                            html += '</tr>';
+                        });
+                        
+                        html += '</tbody></table>';
+                        $('#orders-container').html(html);
+                        
+                        // Add event listener for update status buttons
+                        $('.update-status-btn').on('click', function() {
+                            const orderId = $(this).data('id');
+                            const currentStatus = $(this).data('status');
+                            
+                            $('#update-order-id').val(orderId);
+                            $('#update-status').val(currentStatus);
+                            
+                            new bootstrap.Modal('#update-status-modal').show();
+                        });
+                    });
+                });
+            }
+            
+            // Helper function for order status colors
+            function getStatusColor(status) {
+                switch (status) {
+                    case 'new': return 'primary';
+                    case 'processing': return 'info';
+                    case 'shipped': return 'warning';
+                    case 'delivered': return 'success';
+                    case 'cancelled': return 'danger';
+                    default: return 'secondary';
+                }
+            }
+            
+            // Customer search
+            $('#customer-search').on('keyup', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                
+                if (searchTerm.length > 0) {
+                    dbaasRequest('db/customers', 'POST', {
+                        method: 'select',
+                        where: [['name', 'like', `%${searchTerm}%`]]
+                    }, function(err, data) {
+                        if (err) {
+                            console.error('Error searching customers:', err);
+                            return;
+                        }
+                        
+                        if (!data.data || data.data.length === 0) {
+                            $('#customers-container').html('<p>No customers found matching your search.</p>');
+                            return;
+                        }
+                        
+                        // Update customer table with search results
+                        let html = '<table class="table table-hover"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th></tr></thead><tbody>';
+                        
+                        data.data.forEach(function(customer) {
+                            html += `<tr data-id="${customer.id}" class="customer-row">
+                                <td>${customer.id}</td>
+                                <td>${customer.name}</td>
+                                <td>${customer.email}</td>
+                                <td>${customer.phone || 'N/A'}</td>
+                            </tr>`;
+                        });
+                        
+                        html += '</tbody></table>';
+                        $('#customers-container').html(html);
+                        
+                        // Re-add click handler for customer rows
+                        $('.customer-row').on('click', function() {
+                            const customerId = $(this).data('id');
+                            $('#customer-filter').val(customerId).trigger('change');
+                        });
+                    });
+                } else {
+                    loadCustomers();
+                }
+            });
+            
+            // Customer filter for orders
+            $('#customer-filter').on('change', function() {
+                const customerId = $(this).val();
+                loadOrders(customerId ? parseInt(customerId) : null);
+            });
+            
+            // Add customer button
+            $('#add-customer-btn').on('click', function() {
+                $('#add-customer-form')[0].reset();
+                new bootstrap.Modal('#add-customer-modal').show();
+            });
+            
+            // Save customer button
+            $('#save-customer-btn').on('click', function() {
+                const customerData = {
+                    name: $('#customer-name').val(),
+                    email: $('#customer-email').val(),
+                    phone: $('#customer-phone').val() || null
+                };
+                
+                dbaasRequest('db/customers', 'POST', {
+                    method: 'insert',
+                    data: customerData
+                }, function(err, data) {
+                    if (err) {
+                        alert('Error creating customer: ' + JSON.stringify(err));
+                        return;
+                    }
+                    
+                    bootstrap.Modal.getInstance('#add-customer-modal').hide();
+                    loadCustomers();
+                });
+            });
+            
+            // Add order button
+            $('#add-order-btn').on('click', function() {
+                $('#add-order-form')[0].reset();
+                new bootstrap.Modal('#add-order-modal').show();
+            });
+            
+            // Save order button
+            $('#save-order-btn').on('click', function() {
+                const orderData = {
+                    customer_id: $('#order-customer').val(),
+                    amount: $('#order-amount').val(),
+                    status: $('#order-status').val()
+                };
+                
+                dbaasRequest('db/orders', 'POST', {
+                    method: 'insert',
+                    data: orderData
+                }, function(err, data) {
+                    if (err) {
+                        alert('Error creating order: ' + JSON.stringify(err));
+                        return;
+                    }
+                    
+                    bootstrap.Modal.getInstance('#add-order-modal').hide();
+                    loadOrders($('#customer-filter').val() || null);
+                });
+            });
+            
+            // Save status button
+            $('#save-status-btn').on('click', function() {
+                const orderId = $('#update-order-id').val();
+                const newStatus = $('#update-status').val();
+                
+                dbaasRequest('db/orders', 'PUT', {
+                    where: [['id', '=', orderId]],
+                    data: {
+                        status: newStatus
+                    }
+                }, function(err, data) {
+                    if (err) {
+                        alert('Error updating order status: ' + JSON.stringify(err));
+                        return;
+                    }
+                    
+                    bootstrap.Modal.getInstance('#update-status-modal').hide();
+                    loadOrders($('#customer-filter').val() || null);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

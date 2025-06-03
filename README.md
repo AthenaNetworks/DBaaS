@@ -2,23 +2,41 @@
 
 ## Overview
 
-DBaaS is a RESTful API interface that allows you to interact with databases without writing a full backend. It maps HTTP methods to SQL operations with robust authentication and granular access control.
+DBaaS is a powerful RESTful API interface that allows you to interact with databases without writing a full backend. It maps HTTP methods to SQL operations with robust authentication and granular access control, providing a secure and flexible way to manage database operations through a standardized API.
 
 ## Features
 
+### Database Operations
+
 - **RESTful API**: Maps HTTP methods to SQL operations
-  - GET → SELECT SQL statements
-  - POST → INSERT SQL statements
-  - PUT → UPDATE SQL statements (with UPSERT functionality)
-  - DELETE → DELETE SQL statements
-- **Authentication**: API key-based authentication with expiration
-- **Role-Based Access Control**: Admin and user roles with different permission levels
+  - GET → SELECT SQL statements with support for filtering, sorting, and pagination
+  - POST → INSERT SQL statements with validation and bulk insertion capabilities
+  - PUT → UPDATE SQL statements with UPSERT functionality for create-or-update operations
+  - DELETE → DELETE SQL statements with conditional deletion
+- **Complex Queries**: Support for complex WHERE conditions, JOINs, and aggregate functions
+- **Data Export**: Export table data to JSON or CSV formats
+
+### Security & Access Control
+
+- **Authentication**: API key-based authentication with 30-day expiration and refresh capabilities
+- **Role-Based Access Control**: Two-tier role system
+  - **Admin**: Full system access with user management capabilities
+  - **User**: Limited access based on explicitly granted permissions
 - **Granular Permissions**:
-  - Table-specific permissions
+  - Table-specific permissions for precise access control
   - Operation-specific permissions (select, insert, update, delete)
-  - Column-level restrictions
-  - Conditional access with WHERE clauses
-- **Security**: Input validation, query sanitization, and error handling
+  - Column-level restrictions to hide sensitive data
+  - Row-level filtering with WHERE conditions for data isolation
+- **Security**: Input validation, query sanitization, prepared statements, and comprehensive error handling
+
+### Administration
+
+- **CLI Tools**: Comprehensive Artisan commands for administration
+  - User management (add, remove, update, list)
+  - Permission management with granular control
+  - Table management (create, modify, delete, list, export, seed)
+- **Interactive Mode**: All commands support both interactive and non-interactive usage
+- **Detailed Logging**: Track all database operations with user attribution
 
 ## Installation
 
@@ -110,15 +128,79 @@ DBaaS is a RESTful API interface that allows you to interact with databases with
    
    Your API will be available at `http://localhost:8000`
 
+## User and Permission Management
+
+### User Management
+
+DBaaS provides a powerful Artisan command for managing users without requiring API access:
+
+```bash
+php artisan dbaas:user {action?} [options]
+```
+
+Available actions:
+- `add` - Create a new user with name, email, password, and role
+- `remove` - Delete an existing user with confirmation
+- `update` - Modify user details including role and API key refresh
+- `list` - Display all users with their details (default)
+
+Examples:
+
+```bash
+# Create an admin user
+php artisan dbaas:user add --name="Admin User" --email="admin@example.com" --password="secure123" --role="admin"
+
+# Update a user's role and refresh their API key
+php artisan dbaas:user update --id=1 --role="admin" --refresh-key
+
+# List all users with their details
+php artisan dbaas:user list
+```
+
+### Permission Management
+
+The granular permission system is managed through a dedicated Artisan command:
+
+```bash
+php artisan dbaas:permission {action?} [options]
+```
+
+Available actions:
+- `grant` - Grant permissions to a user with precise control
+- `revoke` - Remove permissions from a user
+- `list` - List all permissions with filtering options
+- `show` - Show detailed information about a specific permission
+
+Examples:
+
+```bash
+# Grant a user permission to select and update records in a table
+php artisan dbaas:permission grant --user=5 --table=customers --operations=select,update
+
+# Grant permissions with column restrictions (hide sensitive data)
+php artisan dbaas:permission grant --user=user@example.com --table=orders --operations=select,insert,update --columns-denied=credit_card_number,cvv
+
+# Grant permissions with row-level filtering (user can only see their own records)
+php artisan dbaas:permission grant --user=5 --table=orders --operations=select,update --where='[["user_id","=",5]]'
+```
+
+For more details on user and permission management, see the [authentication documentation](/docs/authentication.md) and [permission management documentation](/docs/permission_management.md).
+
 ## Documentation
 
 For detailed documentation on how to use the DBaaS API, including all available endpoints, request/response formats, and examples, please refer to the [documentation index](/docs/index.md).
 
-The documentation covers:
+The documentation includes:
 
-- Authentication and authorization
-- Database operations (SELECT, INSERT, UPDATE, DELETE)
-- Permission management
+- [Authentication and Authorization](docs/authentication.md) - API key management and security
+- [User Roles and Permissions](docs/user_roles.md) - Role-based access control system
+- [Permission Management](docs/permission_management.md) - Granular permission control
+- [Artisan Commands](docs/artisan_commands.md) - CLI tools for administration
+- Database operations:
+  - SELECT operations with filtering, sorting, and pagination
+  - INSERT operations with validation
+  - UPDATE operations with upsert functionality
+  - DELETE operations with conditions
 - Error handling and troubleshooting
 
 ## License

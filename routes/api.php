@@ -20,7 +20,6 @@ use App\Http\Controllers\UserController;
 
 // Authentication Routes (no middleware required)
 Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
 

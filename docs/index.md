@@ -2,6 +2,12 @@
 
 Welcome to the Database as a Service (DBaaS) API documentation. This API provides a RESTful interface to interact with databases without writing a full backend.
 
+## Quick Start
+
+**New to DBaaS?** Start here:
+
+- [Getting Started Guide](getting_started.md) - Create tables, set up users, and make API requests with JavaScript/jQuery
+
 ## Overview
 
 The DBaaS API maps HTTP methods to SQL operations:
@@ -21,7 +27,11 @@ All API requests (except registration and login) require an API key sent in the 
 X-API-Key: your-api-key-here
 ```
 
-To obtain an API key, you must register and log in using the authentication endpoints.
+To obtain an API key, you must log in using the authentication endpoints. For detailed information about authentication, authorization, and the permission system, see the following documentation:
+
+- [Authentication and Authorization](authentication.md)
+- [User Roles and Permissions](user_roles.md)
+- [Permission Management](permission_management.md)
 
 ## API Endpoints
 
@@ -40,7 +50,6 @@ To obtain an API key, you must register and log in using the authentication endp
 
 | Endpoint                | Method | Description                                  |
 |-------------------------|--------|----------------------------------------------|
-| `/api/auth/register`    | POST   | Register a new user                          |
 | `/api/auth/login`       | POST   | Login and obtain an API key                  |
 | `/api/auth/me`          | GET    | Get information about the authenticated user |
 | `/api/auth/refresh-key` | POST   | Generate a new API key                       |
@@ -126,11 +135,11 @@ The DBaaS system provides interactive Artisan commands for database schema manag
 | `dbaas:table:seed`       | Seed data into a database table               |
 | `dbaas:table:export`     | Export table data to JSON or CSV format       |
 
-For more information on these commands, refer to the [CLI Commands](cli_commands.md) documentation.
+For more information on these commands, refer to the [Artisan Commands](artisan_commands.md) documentation.
 
 ## Getting Started
 
-1. Register a user account using the `/api/auth/register` endpoint
+1. Request account credentials from your system administrator
 2. Log in to obtain an API key using the `/api/auth/login` endpoint
 3. Include your API key in the `X-API-Key` header for all subsequent requests
 4. Use the appropriate HTTP method and endpoint for your desired operation
